@@ -1,24 +1,9 @@
+from melee import enums
+import random
 
-class CharObservations:
-    def __init__(self):
-        self.distance: float = 0
-        self.x: float = 0
-        self.Y: float = 0
-        self.currentMove: float = 0
-        self.canAttack: float = 0
-        self.canShield: float = 0
-        self.isInTheAir: float = 0
-        self.isOnTheFloor: float = 0
-        self.hasDoubleJump: float = 0
-
-
-    def updateState(self, portNum):
-        self.distance: float = 0
-        self.x: float = 0
-        self.Y: float = 0
-        self.currentMove: float = 0
-        self.canAttack: float = 0
-        self.canShield: float = 0
-        self.isInTheAir: float = 0
-        self.isOnTheFloor: float = 0
-        self.hasDoubleJump: float = 0
+def press_random_button(controller):
+    random_x = random.uniform(-1, 1)
+    random_Y = random.uniform(-1, 1)
+    button_list = [None, enums.Button.BUTTON_A]
+    random_button = random.randint(0, len(button_list) - 1)
+    controller.simple_press(random_x, random_Y, button_list[random_button])
