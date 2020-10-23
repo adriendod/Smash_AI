@@ -1,111 +1,84 @@
 #!/usr/bin/python3
-import argparse
-import signal
-import sys
 import melee
 import action_space
+import random
+import math
+import torch
+from console import *
+from action_space import ActionSpace
+from observation_space import Observations
 
+# if gpu is to be used
+use_cuda = torch.cuda.is_available()
 
+device = torch.device("cuda:0" if use_cuda else "cpu")
+Tensor = torch.Tensor
+LongTensor = torch.LongTensor
+random_seed = 42
+torch.manual_seed(random_seed)
+random.seed(random_seed)
 
-port = 2
-opponent = 1
-debug = False
-framerecord = False
-address = "127.0.0.1"
-dolphin_executable_path = "../Ishiiruka/build/Binaries"
-connect_code = ""
+###### PARAMS ######
+learning_rate = 0.02
+num_episodes = 500
+gamma = 1
 
-log = None
-if debug:
-    log = melee.Logger()
+hidden_layer = 64
 
-framedata = melee.FrameData(framerecord)
+replay_mem_size = 50000
+batch_size = 32
 
-console = melee.Console(path=dolphin_executable_path,
-                        slippi_address=address,
-                        slippi_port=51441,
-                        blocking_input=False,
-                        logger=log)
+egreedy = 0.9
+egreedy_final = 0
+egreedy_decay = 500
 
-console.render = True
+report_interval = 10
+score_to_solve = 195
 
-controller = melee.Controller(console=console,
-                              port=port,
-                              type=melee.ControllerType.STANDARD)
+####################
 
-controller_opponent = melee.Controller(console=console,
-                                       port=opponent,
-                                       type=melee.ControllerType.GCN_ADAPTER)
+actionSpace = ActionSpace()
+observation_space = Observations()
 
-# This isn't necessary, but makes it so that Dolphin will get killed when you ^C
-def signal_handler(sig, frame):
-    console.stop()
-    if debug:
-        log.writelog()
-        print("") #because the ^C will be on the terminal
-        print("Log file created: " + log.filename)
-    print("Shutting down cleanly...")
-    if framerecord:
-        framedata.save_recording()
-    sys.exit(0)
-
-signal.signal(signal.SIGINT, signal_handler)
-
-# Run the console
-console.run()
-
-# Connect to the console
-print("Connecting to console...")
-if not console.connect():
-    print("ERROR: Failed to connect to the console.")
-    print("\tIf you're trying to autodiscover, local firewall settings can " +
-          "get in the way. Try specifying the address manually.")
-    sys.exit(-1)
-print("Console connected")
-
-# Plug our controller in
-#   Due to how named pipes work, this has to come AFTER running dolphin
-#   NOTE: If you're loading a movie file, don't connect the controller,
-#   dolphin will hang waiting for input and never receive it
-print("Connecting controller to console...")
-if not controller.connect():
-    print("ERROR: Failed to connect the controller.")
-    sys.exit(-1)
-print("Controller connected")
+def calculate_epsilon(steps_done):
+    epsilon = egreedy_final + (egreedy - egreedy_final) * \
+              math.exp(-1. * steps_done / egreedy_decay )
+    return epsilon
 
 # Main loop
+step = 0
 while True:
-    step = 0
+    step += 1
     gamestate = console.step()
-    distance = gamestate.distance
-    print(distance)
     if gamestate is None:
         continue
-    try:
-        print(gamestate.player[1].x)
-    except:
-        print("no player gamestate")
 
     # If in game:
     if gamestate.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
-
-        if framerecord:
+        if config.framerecord:
             framedata._record_frame(gamestate)
+        #if step % 2 == 0:
+            #distance = gamestate.distance
+            #print(distance)
+            #print(gamestate.player[1].x)
+        observation_space.update(gamestate)
+        print(observation_space.observations)
+        actionSpace.press_random_button(controller)
 
-        action_space.press_random_button(controller)
+
+
 
     # If in a menu:
     else:
         melee.MenuHelper.menu_helper_simple(gamestate,
                                             controller,
-                                            port,
+                                            config.port,
                                             melee.Character.FOX,
                                             melee.Stage.POKEMON_STADIUM,
-                                            connect_code,
+                                            config.connect_code,
                                             autostart=True,
                                             swag=True)
 
-
-    if log:
-        log.logframe(gamestate)
-        log.writeframe()
+    if config.log:
+        config.log.logframe(gamestate)
+        config.log.writeframe()
