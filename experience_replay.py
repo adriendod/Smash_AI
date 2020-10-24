@@ -1,43 +1,24 @@
-class ExpReplay():
-    def __init__(self, e_max=15000, e_min=100):
-        self._max = e_max  # maximum number of experiences
-        self._min = e_min  # minimum number of experiences for training
-        self.exp = {'state': [], 'action': [], 'reward': [], 'next_state': [],
-                    'done': []}  # total experiences the Agent stored
+import random
 
-    def get_max(self):
-        """return the maximum number of experiences"""
-        return self._max
 
-    def get_min(self):
-        """return the minimum number of experiences"""
-        return self._min
+class ExperienceReplay(object):
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.memory = []
+        self.position = 0
 
-    def get_num(self):
-        """return the curren number of experiences"""
-        return len(self.exp['state'])
+    def push(self, state, action, new_state, reward, done):
+        transition = (state, action, new_state, reward, done)
 
-    def get_batch(self, batch_size=64):
-        """random choose a batch of experiences for training"""
-        idx = np.random.choice(self.get_num(), size=batch_size, replace=False)
-        state = np.array([self.exp['state'][i] for i in idx])
-        action = [self.exp['action'][i] for i in idx]
-        reward = [self.exp['reward'][i] for i in idx]
-        next_state = np.array([self.exp['next_state'][i] for i in idx])
-        done = [self.exp['done'][i] for i in idx]
-        return state, action, reward, next_state, done
+        if self.position >= len(self.memory):
+            self.memory.append(transition)
+        else:
+            self.memory[self.position] = transition
 
-    def add(self, state, action, reward, next_state, done):
-        """remove the oldest experience if the meomory is full"""
-        if self.get_num() > self.get_max():
-            del self.exp['state'][0]
-            del self.exp['action'][0]
-            del self.exp['reward'][0]
-            del self.exp['next_state'][0]
-            del self.exp['done'][0]
-        """add single experience"""
-        self.exp['state'].append(state)
-        self.exp['action'].append(action)
-        self.exp['reward'].append(reward)
-        self.exp['next_state'].append(next_state)
-        self.exp['done'].append(done)
+        self.position = (self.position + 1) % self.capacity
+
+    def sample(self, batch_size):
+        return zip(*random.sample(self.memory, batch_size))
+
+    def __len__(self):
+        return len(self.memory)

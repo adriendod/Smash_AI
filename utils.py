@@ -1,10 +1,8 @@
-def signal_handler(sig, frame):
-    console.stop()
-    if config.debug:
-        log.writelog()
-        print("")  # because the ^C will be on the terminal
-        print("Log file created: " + log.filename)
-    print("Shutting down cleanly...")
-    if config.framerecord:
-        framedata.save_recording()
-    sys.exit(0)
+import math
+import config
+
+
+def calculate_epsilon(steps_done):
+    epsilon = config.egreedy_final + (config.egreedy - config.egreedy_final) * \
+              math.exp(-1. * steps_done / config.egreedy_decay)
+    return epsilon

@@ -32,3 +32,7 @@ class ActionSpace:
     def press_random_button(self, controller):
         random_button = random.randint(0, len(self.actions) - 1)
         self.press_button(controller, self.actions[random_button])
+
+    def get_random_action(self):
+        rand_int = random.randint(0, len(self.actions) - 1)
+        return rand_int
