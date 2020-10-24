@@ -7,8 +7,8 @@ dolphin_executable_path = "../Ishiiruka/build/Binaries"
 connect_code = ""
 log = None
 
-number_of_inputs = 10
-number_of_outputs = 2
+number_of_inputs = 16
+number_of_outputs = 54
 
 ###### PARAMS ######
 learning_rate = 0.02

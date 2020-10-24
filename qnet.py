@@ -40,8 +40,10 @@ class QNetAgent(object):
                 action_from_nn = self.nn(state)
                 action = torch.max(action_from_nn, 0)[1]
                 action = action.item()
+            print(str(action) + " PREDICTED")
         else:
             action = actionSpace.get_random_action()
+            print(str(action))
 
         return action
 
