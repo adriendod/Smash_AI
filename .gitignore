@@ -159,3 +159,5 @@ dmypy.json
 
 # other
 dqn_cartpole.py
+/squashfs-root/
+Slippi_Online-x86_64
