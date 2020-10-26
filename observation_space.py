@@ -8,6 +8,13 @@ class Observations:
         self.observations += self.agent.obs_list
         self.observations += self.adversary.obs_list
 
+    def reward(self, previous_obs_space):
+        previous_agent_damage = previous_obs_space.agent.percent
+        previous_adversary_damage = previous_obs_space.adversary.percent
+        agent_damage = self.agent.percent - previous_agent_damage
+        adversary_damage = self.adversary.percent - previous_adversary_damage
+        return adversary_damage - agent_damage
+
     class Character:
         def __init__(self, gamestate, port):
             self.port = port

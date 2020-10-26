@@ -9,6 +9,7 @@ from action_space import ActionSpace
 from observation_space import Observations
 from experience_replay import ExperienceReplay
 from qnet import QNetAgent
+from torch.utils.tensorboard import SummaryWriter
 
 # if gpu is to be used
 use_cuda = torch.cuda.is_available()
@@ -19,6 +20,7 @@ random_seed = 42
 torch.manual_seed(random_seed)
 random.seed(random_seed)
 
+writer = SummaryWriter()
 
 actionSpace = ActionSpace()
 memory = ExperienceReplay(config.replay_mem_size)
@@ -50,21 +52,22 @@ while True:
 
         epsilon = utils.calculate_epsilon(frames_total)
         action = qnet_agent.select_action(state, epsilon)
-        print(action)
 
         actionSpace.press_random_button(controller)
 
         gamestate = console.step()
-        observation_space = Observations(gamestate)
-        new_state = observation_space.observations
-        reward = 0
+        new_observation_space = Observations(gamestate)
+        new_state = new_observation_space.observations
+        reward = new_observation_space.reward(observation_space)
         done = 0
 
         memory.push(state, action, new_state, reward, done)
-        qnet_agent.optimize(memory)
+        loss = qnet_agent.optimize(memory)
 
         state = new_state
-
+        writer.add_scalar('Rewards', reward, step)
+        writer.add_scalar('Epsilon', epsilon, step)
+        writer.add_scalar('Loss', loss, step)
 
 
 
