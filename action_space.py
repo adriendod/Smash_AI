@@ -21,12 +21,14 @@ class ActionSpace:
         self.button_list = [self.no_button, self.normal, self.special, self.shield, self.jump, self.grab]
         self.actions = []
 
+        # Create action list
         for button in self.button_list:
             for x in self.stick_positions:
                 for y in self.stick_positions:
                     self.actions.append(combine_actions(button, x, y))
 
-    def press_button(self, controller, action):
+    def press_button(self, controller, action_index):
+        action = self.actions[action_index]
         controller.simple_press(action[1], action[2], action[0])
 
     def press_random_button(self, controller):

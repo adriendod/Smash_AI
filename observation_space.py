@@ -28,6 +28,8 @@ class Observations:
             self.isOffStage = int(player.off_stage)
             self.isOnTheFloor = int(player.on_ground)
             self.jumpsLeft = player.jumps_left
+            self.stocks = player.stock
+            print(self.stocks)
             self.obs_list = [self.x,
                              self.Y,
                              self.currentMove,

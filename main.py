@@ -36,53 +36,66 @@ start_time = time.time()
 
 # Main loop
 step = 0
+total_reward = 0
+done = False
 gamestate = console.step()
+
 while True:
     if gamestate is None:
         continue
-
     # If in game:
     if gamestate.menu_state in [melee.Menu.IN_GAME, melee.Menu.SUDDEN_DEATH]:
 
         step += 1
-        frames_total += 1
+        reward = 0
 
         observation_space = Observations(gamestate)
         state = observation_space.observations
 
+        # Get action
         epsilon = utils.calculate_epsilon(frames_total)
         action = qnet_agent.select_action(state, epsilon)
 
-        actionSpace.press_random_button(controller)
+        # Press button
+        actionSpace.press_button(controller, action)
 
-        gamestate = console.step()
-        new_observation_space = Observations(gamestate)
-        new_state = new_observation_space.observations
-        reward = new_observation_space.reward(observation_space)
-        done = 0
+        for _ in range(2):
+            frames_total += 1
+            gamestate = console.step()
+            new_observation_space = Observations(gamestate)
+            new_state = new_observation_space.observations
+            temp_reward = new_observation_space.reward(observation_space)
+            reward += temp_reward
 
         memory.push(state, action, new_state, reward, done)
         loss = qnet_agent.optimize(memory)
 
+        total_reward += reward
         state = new_state
-        writer.add_scalar('Rewards', reward, step)
-        writer.add_scalar('Epsilon', epsilon, step)
-        writer.add_scalar('Loss', loss, step)
 
-
-
-
+        if done:
+            done = False
+        if step == 250:
+            step = 0
+            done = True
+            writer.add_scalar('Rewards', total_reward, step)
+            print("Reward: " + str(total_reward))
+            writer.add_scalar('Epsilon', epsilon, step)
+            if loss is not None:
+                writer.add_scalar('Loss', loss, step)
+                print("Loss: " + str(loss))
+            total_reward = 0
 
     # If in a menu:
     else:
         melee.MenuHelper.menu_helper_simple(gamestate,
                                             controller,
-                                            config.port,
                                             melee.Character.FOX,
                                             melee.Stage.POKEMON_STADIUM,
-                                            config.connect_code,
+                                            connect_code=False,
                                             autostart=True,
                                             swag=True)
+
         gamestate = console.step()
 
     if config.log:
